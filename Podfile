@@ -1,4 +1,5 @@
-platform :macos, '10.13'
+source 'https://mirrors.tuna.tsinghua.edu.cn/git/CocoaPods/Specs.git'
+platform :osx, '10.13'
 inhibit_all_warnings!
 
 target 'WeChatTweak' do
