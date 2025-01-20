@@ -227,6 +227,11 @@ typedef NS_ENUM(unsigned int, MessageDataType) {
 - (BOOL)ClearUnRead:(id)arg1 FromCreateTime:(unsigned int)arg2 ToCreateTime:(unsigned int)arg3;
 - (BOOL)HasMsgInChat:(id)arg1;
 - (void)DelMsg:(id)arg1 msgList:(id)arg2 isDelAll:(BOOL)arg3 isManual:(BOOL)arg4;
+- (unsigned int)GetLastMsgCreateTime:(id)arg1;
+- (unsigned int)GetUnReadCount:(id)arg1;
+- (unsigned int)GetLastMsgLocalId:(id)arg1;
+- (id)GetLastMsg:(id)arg1;
+
 @end
 
 @interface NSDictionary (XMLDictionary)

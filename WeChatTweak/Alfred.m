@@ -97,6 +97,8 @@
         return [GCDWebServerDataResponse responseWithJSONObject:@{@"items": items}];
     }];
     [self.server addHandlerForMethod:@"GET" path:@"/wechat/allcontacts" requestClass:[GCDWebServerRequest class] processBlock:^GCDWebServerResponse * _Nullable(__kindof GCDWebServerRequest * _Nonnull request) {
+        
+        FFProcessReqsvrZZ *service = [[objc_getClass("MMServiceCenter") defaultCenter] getService:objc_getClass("FFProcessReqsvrZZ")];
             
         NSString *path = ({
             NSString *path = nil;
@@ -124,6 +126,7 @@
                 NSString *avatar = [NSString stringWithFormat:@"%@/Avatar/%@.jpg", path, [contact.m_nsUsrName md5String]];
                 BOOL isOfficialAccount = (contact.m_uiCertificationFlag >> 0x3 & 0x1) == 1;
                 if (!isOfficialAccount) {
+                    // MessageData msg = [service GetLastMsg:<#(id)#>]
                     [items addObject:@{
                         @"icon": @{
                             @"path": [NSFileManager.defaultManager fileExistsAtPath:avatar] ? avatar : NSNull.null
@@ -141,7 +144,10 @@
                         }),
                         @"subtitle": contact.m_nsNickName.length ? contact.m_nsNickName : NSNull.null,
                         @"arg": contact.m_nsUsrName.length ? contact.m_nsUsrName : NSNull.null,
-                        @"valid": @(contact.m_nsUsrName.length > 0)
+                        @"valid": @(contact.m_nsUsrName.length > 0),
+                        @"lastContact": @(contact.m_nsUsrName.length ? [service GetLastMsgCreateTime:contact.m_nsUsrName] : 0),
+                        @"lastLocalId": @(contact.m_nsUsrName.length ? [service GetLastMsgLocalId:contact.m_nsUsrName] : 0),
+                        @"unreadCount": @(contact.m_nsUsrName.length ? [service GetUnReadCount:contact.m_nsUsrName] : 0)
                     }];
                 }
             }
@@ -209,7 +215,10 @@
                         @"toUser": toUser ? toUser : NSNull.null,
                         @"fromUser": fromUser ? fromUser : NSNull.null,
                         @"createTime": @(createTime),
-                        @"isSentFromSelf": @(isSentFromSelf)
+                        @"isSentFromSelf": @(isSentFromSelf),
+                        @"localId": @(message.mesLocalID), // incremental id of messages for each user
+                        @"svrId": @(message.mesSvrID),
+                        @"messageType": @(message.messageType)
                         // Add other relevant fields as necessary
                     }];
                 }
