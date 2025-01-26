@@ -76,16 +76,16 @@
                             @"path": [NSFileManager.defaultManager fileExistsAtPath:avatar] ? avatar : NSNull.null
                         },
                         @"title": ({
-                            id value = nil;
-                            if (contact.m_nsRemark.length) {
-                                value = contact.m_nsRemark;
-                            } else if (contact.m_nsNickName.length) {
-                                value = contact.m_nsNickName;
-                            } else {
-                                value = NSNull.null;
-                            }
-                            value;
-                        }),
+                        id value = nil;
+                        if (contact.m_nsRemark.length) {
+                            value = contact.m_nsRemark;
+                        } else if (contact.m_nsNickName.length) {
+                            value = contact.m_nsNickName;
+                        } else {
+                            value = NSNull.null;
+                        }
+                        value;
+                    }),
                         @"subtitle": contact.m_nsNickName.length ? contact.m_nsNickName : NSNull.null,
                         @"arg": contact.m_nsUsrName.length ? contact.m_nsUsrName : NSNull.null,
                         @"valid": @(contact.m_nsUsrName.length > 0)
@@ -99,7 +99,7 @@
     [self.server addHandlerForMethod:@"GET" path:@"/wechat/allcontacts" requestClass:[GCDWebServerRequest class] processBlock:^GCDWebServerResponse * _Nullable(__kindof GCDWebServerRequest * _Nonnull request) {
         
         FFProcessReqsvrZZ *service = [[objc_getClass("MMServiceCenter") defaultCenter] getService:objc_getClass("FFProcessReqsvrZZ")];
-            
+        
         NSString *path = ({
             NSString *path = nil;
             if ([objc_getClass("PathUtility") respondsToSelector:@selector(GetCurUserDocumentPath)]) {
@@ -119,7 +119,7 @@
             [array addObjectsFromArray:[groupStorage GetGroupContactList:2 ContactType:0]];
             array;
         });
-
+        
         NSArray<NSDictionary<NSString *, id> *> *items = ({
             NSMutableArray<NSDictionary<NSString *, id> *> *items = NSMutableArray.array;
             for (WCContactData *contact in contacts) {
@@ -128,36 +128,42 @@
                 if (!isOfficialAccount) {
                     // MessageData msg = [service GetLastMsg:<#(id)#>]
                     [items addObject:@{
-                        @"icon": @{
-                            @"path": [NSFileManager.defaultManager fileExistsAtPath:avatar] ? avatar : NSNull.null
-                        },
+                        @"icon": [NSFileManager.defaultManager fileExistsAtPath:avatar] ? avatar : NSNull.null,
                         @"title": ({
-                            id value = nil;
-                            if (contact.m_nsRemark.length) {
-                                value = contact.m_nsRemark;
-                            } else if (contact.m_nsNickName.length) {
-                                value = contact.m_nsNickName;
-                            } else {
-                                value = NSNull.null;
-                            }
-                            value;
-                        }),
+                        id value = nil;
+                        if (contact.m_nsRemark.length) {
+                            value = contact.m_nsRemark;
+                        } else if (contact.m_nsNickName.length) {
+                            value = contact.m_nsNickName;
+                        } else {
+                            value = NSNull.null;
+                        }
+                        value;
+                    }),
                         @"subtitle": contact.m_nsNickName.length ? contact.m_nsNickName : NSNull.null,
                         @"arg": contact.m_nsUsrName.length ? contact.m_nsUsrName : NSNull.null,
                         @"valid": @(contact.m_nsUsrName.length > 0),
                         @"lastContact": @(contact.m_nsUsrName.length ? [service GetLastMsgCreateTime:contact.m_nsUsrName] : 0),
                         @"lastLocalId": @(contact.m_nsUsrName.length ? [service GetLastMsgLocalId:contact.m_nsUsrName] : 0),
-                        @"unreadCount": @(contact.m_nsUsrName.length ? [service GetUnReadCount:contact.m_nsUsrName] : 0)
+                        @"unreadCount": @(contact.m_nsUsrName.length ? [service GetUnReadCount:contact.m_nsUsrName] : 0),
+                        @"isFaved": @(contact.isFaved),
+                        @"isGroupChat": @(contact.isGroupChat),
+                        @"isTopSession": @(contact.isTopSession),
+                        @"isMinimizedGroup": @(contact.isInGroupBox),
+                        @"isNotify": @(contact.isChatStatusNotifyOpen)
                     }];
                 }
             }
             items;
         });
-
+        
         return [GCDWebServerDataResponse responseWithJSONObject:items];
     }];
-
+    
     // Start session
+    [self.server addHandlerForMethod:@"GET" path:@"/ping" requestClass:[GCDWebServerRequest class] processBlock:^GCDWebServerResponse * _Nullable(__kindof GCDWebServerRequest * _Nonnull request) {
+        return [GCDWebServerDataResponse responseWithText:@"pong"];
+    }];
     [self.server addHandlerForMethod:@"GET" path:@"/wechat/start" requestClass:[GCDWebServerRequest class] processBlock:^GCDWebServerResponse * _Nullable(__kindof GCDWebServerRequest * _Nonnull request) {
         WCContactData *contact = ({
             NSString *session = request.query[@"session"];
@@ -193,36 +199,37 @@
         }
         NSMutableArray<NSDictionary<NSString *, id> *> *chatLogItems = [NSMutableArray array];
                 
-                for (MessageData *message in array) {
-                    NSString *content = message.msgContent;
-                    NSString *toUser = message.toUsrName;
-                    NSString *fromUser = message.fromUsrName;
-                    unsigned int createTime = message.msgCreateTime;
-                    BOOL isSentFromSelf = [message isSendFromSelf];
-                    
-                    // Depending on the message type, we may want to adapt content
-                    switch (message.messageType) {
-                        // Assuming some enums or constants for MessageDataType
-                        // case MessageDataTypeImage:
-                        //     content = [message savingImageFileNameWithLocalID];
-                        //     break;
-                        default:
-                            break;
-                    }
-                    
-                    [chatLogItems addObject:@{
-                        @"content": content ? content : NSNull.null,
-                        @"toUser": toUser ? toUser : NSNull.null,
-                        @"fromUser": fromUser ? fromUser : NSNull.null,
-                        @"createTime": @(createTime),
-                        @"isSentFromSelf": @(isSentFromSelf),
-                        @"localId": @(message.mesLocalID), // incremental id of messages for each user
-                        @"svrId": @(message.mesSvrID),
-                        @"messageType": @(message.messageType)
-                        // Add other relevant fields as necessary
-                    }];
-                }
-                return [GCDWebServerDataResponse responseWithJSONObject:@{@"chatLogs": chatLogItems, @"hasMore": @(hasMore == '1')}];
+        for (MessageData *message in array) {
+            NSString *content = message.msgContent;
+            NSString *toUser = message.toUsrName;
+            NSString *fromUser = message.fromUsrName;
+            unsigned int createTime = message.msgCreateTime;
+            BOOL isSentFromSelf = [message isSendFromSelf];
+            
+            // Depending on the message type, we may want to adapt content
+            switch (message.messageType) {
+                // Assuming some enums or constants for MessageDataType
+                // case MessageDataTypeImage:
+                //     content = [message savingImageFileNameWithLocalID];
+                //     break;
+                default:
+                    break;
+            }
+            
+            [chatLogItems addObject:@{
+                @"content": content ? content : NSNull.null,
+                @"toUser": toUser ? toUser : NSNull.null,
+                @"fromUser": fromUser ? fromUser : NSNull.null,
+                @"createTime": @(createTime),
+                @"isSentFromSelf": @(isSentFromSelf),
+                @"localId": @(message.mesLocalID), // incremental id of messages for each user
+                @"svrId": @(message.mesSvrID),
+                @"messageType": @(message.messageType),
+                @"chatName": userId
+                // Add other relevant fields as necessary
+            }];
+        }
+        return [GCDWebServerDataResponse responseWithJSONObject:@{@"chatLogs": chatLogItems, @"hasMore": @(hasMore == '1')}];
         }];
     [self.server addHandlerForMethod:@"POST" path:@"/wechat/send" requestClass:[GCDWebServerRequest class] processBlock:^GCDWebServerResponse * _Nullable(__kindof GCDWebServerRequest * _Nonnull request) {
         

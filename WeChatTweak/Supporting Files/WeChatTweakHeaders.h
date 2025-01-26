@@ -114,6 +114,13 @@ typedef NS_ENUM(unsigned int, MessageDataType) {
 @property(retain, nonatomic) NSString *wt_avatarPath;
 
 - (BOOL)isChatStatusNotifyOpen;
+- (BOOL)isFaved;
+- (BOOL)isStickyFolder;
+- (BOOL)isGroupChat;
+- (BOOL)isTopSession;
+- (BOOL)isInGroupBox;
+- (BOOL)isGroupBoxContact;
+
 
 @end
 
